@@ -4,6 +4,7 @@ defmodule Chatnix.AuthTest do
   """
   use Chatnix.DataCase, async: true
   alias Chatnix.Auth
+  alias Chatnix.TestHelpers.EctoChangeset
 
   describe "&create_user/1" do
     test "returns error when email is taken" do
@@ -14,7 +15,7 @@ defmodule Chatnix.AuthTest do
                  password: "asdfasdfasdasdf"
                })
 
-      assert fetch_error_constraint(changeset, :email, :constraint) === :unique
+      assert EctoChangeset.fetch_error_constraint(changeset, :email, :constraint) === :unique
     end
 
     test "returns error when username is too short" do
@@ -25,8 +26,8 @@ defmodule Chatnix.AuthTest do
                  password: "asdfasdfasdfasdf"
                })
 
-      assert fetch_error_constraint(changeset, :username, :validation) === :length
-      assert fetch_error_constraint(changeset, :username, :kind) === :min
+      assert EctoChangeset.fetch_error_constraint(changeset, :username, :validation) === :length
+      assert EctoChangeset.fetch_error_constraint(changeset, :username, :kind) === :min
     end
 
     test "returns error when email is formatted incorrectly" do
@@ -37,7 +38,7 @@ defmodule Chatnix.AuthTest do
                  password: "asdfasdfasdfasdf"
                })
 
-      assert fetch_error_constraint(changeset, :email, :validation) === :format
+      assert EctoChangeset.fetch_error_constraint(changeset, :email, :validation) === :format
     end
 
     test "returns error when username is taken" do
@@ -48,7 +49,7 @@ defmodule Chatnix.AuthTest do
                  password: "asdfasdfasdfasdf"
                })
 
-      assert fetch_error_constraint(changeset, :username, :constraint) === :unique
+      assert EctoChangeset.fetch_error_constraint(changeset, :username, :constraint) === :unique
     end
 
     test "creates user with valid params" do
@@ -74,10 +75,5 @@ defmodule Chatnix.AuthTest do
       assert user.password_hash !== password
       assert {:ok, _u} = Pbkdf2.check_pass(user, password)
     end
-  end
-
-  defp fetch_error_constraint(%{errors: errors}, error_key, error_constraint) do
-    constraint_properties = elem(errors[error_key], 1)
-    constraint_properties[error_constraint]
   end
 end

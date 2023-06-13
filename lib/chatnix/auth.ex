@@ -2,7 +2,6 @@ defmodule Chatnix.Auth do
   @moduledoc """
   Auth context
   """
-
   alias Chatnix.Schemas.User
   alias Chatnix.Repo
 

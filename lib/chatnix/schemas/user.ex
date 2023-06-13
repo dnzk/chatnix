@@ -2,7 +2,6 @@ defmodule Chatnix.Schemas.User do
   @moduledoc """
   User schema
   """
-
   alias __MODULE__
   use Ecto.Schema
   import Ecto.Changeset
