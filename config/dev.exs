@@ -1,5 +1,7 @@
 import Config
 
+config :pbkdf2_elixir, rounds: 1
+
 # Configure your database
 config :chatnix, Chatnix.Repo,
   username: "postgres",

@@ -9,3 +9,11 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+alias Chatnix.Auth
+
+Auth.create_user(%{
+  username: "user_1",
+  email: "user_1@example.com",
+  password: "asdfasdfasdf"
+})

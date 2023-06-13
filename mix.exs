@@ -42,7 +42,9 @@ defmodule Chatnix.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:pbkdf2_elixir, "~> 2.1.0"},
+      {:credo, "~> 1.7.0"}
     ]
   end
 
@@ -57,7 +59,13 @@ defmodule Chatnix.MixProject do
       setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      "ecto.reset.quiet": [
+        "ecto.drop --quiet",
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "run priv/repo/seeds.exs --quiet"
+      ],
+      test: ["ecto.reset.quiet", "test"]
     ]
   end
 end
