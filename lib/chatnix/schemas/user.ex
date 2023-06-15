@@ -5,6 +5,7 @@ defmodule Chatnix.Schemas.User do
   alias __MODULE__
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @type t :: %User{}
 
@@ -13,6 +14,8 @@ defmodule Chatnix.Schemas.User do
     field :email, :string
     field :password_hash, :string, redact: true
     field :password, :string, redact: true, virtual: true
+
+    many_to_many :rooms, Chatnix.Schemas.Room, join_through: "users_rooms"
 
     timestamps()
   end
@@ -39,4 +42,8 @@ defmodule Chatnix.Schemas.User do
   end
 
   defp put_pass_hash(changeset), do: changeset
+
+  def get_all_by_id(user_query \\ User, ids) do
+    from u in user_query, where: u.id in ^ids
+  end
 end

@@ -12,10 +12,18 @@
 
 alias Chatnix.{Auth, Conversation}
 
-Auth.create_user(%{
-  username: "user_1",
-  email: "user_1@example.com",
-  password: "asdfasdfasdf"
-})
+{:ok, user_1} =
+  Auth.create_user(%{
+    username: "user_1",
+    email: "user_1@example.com",
+    password: "asdfasdfasdf"
+  })
 
-Conversation.create_room("Room 1")
+{:ok, user_2} =
+  Auth.create_user(%{
+    username: "user_2",
+    email: "user_2@example.com",
+    password: "asdfasdfasdf"
+  })
+
+Conversation.create_room(%{name: "Room 1", participants: [user_1, user_2]})

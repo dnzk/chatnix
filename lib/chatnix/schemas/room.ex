@@ -12,6 +12,8 @@ defmodule Chatnix.Schemas.Room do
   schema "rooms" do
     field :name, :string
 
+    many_to_many :users, Chatnix.Schemas.User, join_through: "users_rooms"
+
     timestamps()
   end
 
