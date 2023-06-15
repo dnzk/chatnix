@@ -11,7 +11,7 @@ defmodule Chatnix.Conversation do
   ## Parameters
 
     - name: The room's name
-    - participants: List of map with `id` key for user id
+    - participants: List of map with `id` key for user ID
   """
   @spec create_room(%{
           required(:name) => String.t(),
@@ -31,6 +31,21 @@ defmodule Chatnix.Conversation do
           Repo.rollback(error)
       end
     end)
+  end
+
+  @doc """
+  Deletes a room.
+
+  ## Parameters
+
+    - id: Room ID to delete
+  """
+  @spec delete_room(integer()) :: {:ok, any} | {:error, any}
+  def delete_room(id) do
+    case Repo.get(Room, id) do
+      nil -> {:error, "Room not found"}
+      room -> Repo.delete(room)
+    end
   end
 
   defp associate_room_with_users(%Room{} = room, users) do

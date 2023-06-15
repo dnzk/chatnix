@@ -55,4 +55,16 @@ defmodule Chatnix.ConversationTest do
                })
     end
   end
+
+  describe "&delete_room/1" do
+    test "returns error when room id does not exist" do
+      assert {:error, _} = Conversation.delete_room(300)
+    end
+
+    test "deletes room when room id is valid" do
+      assert {:ok, _} = Conversation.delete_room(1)
+
+      assert is_nil(Repo.get(Room, 1))
+    end
+  end
 end
