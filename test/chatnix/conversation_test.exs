@@ -67,4 +67,26 @@ defmodule Chatnix.ConversationTest do
       assert is_nil(Repo.get(Room, 1))
     end
   end
+
+  describe "&create_message/1" do
+    test "returns error when message is less than one character" do
+      assert {:error, _error} =
+               Conversation.create_message(%{sender_id: 1, room_id: 1, message: ""})
+    end
+
+    test "returns error when room_id does not exist" do
+      assert {:error, _error} =
+               Conversation.create_message(%{sender_id: 1, room_id: 1000, message: "Test"})
+    end
+
+    test "returns error when user_id does not exist" do
+      assert {:error, _error} =
+               Conversation.create_message(%{sender_id: 1000, room_id: 1, message: "Test"})
+    end
+
+    test "creates message with valid params" do
+      assert {:ok, _message} =
+               Conversation.create_message(%{sender_id: 1, room_id: 1, message: "Test"})
+    end
+  end
 end

@@ -6,6 +6,7 @@ defmodule Chatnix.Schemas.User do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Chatnix.Schemas.Room
 
   @type t :: %User{}
 
@@ -15,7 +16,7 @@ defmodule Chatnix.Schemas.User do
     field :password_hash, :string, redact: true
     field :password, :string, redact: true, virtual: true
 
-    many_to_many :rooms, Chatnix.Schemas.Room, join_through: "users_rooms"
+    many_to_many :rooms, Room, join_through: "users_rooms"
 
     timestamps()
   end

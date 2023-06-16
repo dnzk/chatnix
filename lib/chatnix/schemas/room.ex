@@ -6,13 +6,14 @@ defmodule Chatnix.Schemas.Room do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
+  alias Chatnix.Schemas.User
 
   @type t :: %Room{}
 
   schema "rooms" do
     field :name, :string
 
-    many_to_many :users, Chatnix.Schemas.User, join_through: "users_rooms"
+    many_to_many :users, User, join_through: "users_rooms"
 
     timestamps()
   end

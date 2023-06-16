@@ -2,7 +2,8 @@ defmodule Chatnix.Conversation do
   @moduledoc """
   Conversation context
   """
-  alias Chatnix.Schemas.{Room, User}
+  alias Chatnix.Schemas.UsersRooms
+  alias Chatnix.Schemas.{Room, User, Message}
   alias Chatnix.Repo
 
   @doc """
@@ -45,6 +46,57 @@ defmodule Chatnix.Conversation do
     case Repo.get(Room, id) do
       nil -> {:error, "Room not found"}
       room -> Repo.delete(room)
+    end
+  end
+
+  @doc """
+  Creates a message.
+
+  ## Parameters
+
+    - message: The message to create.
+    - room_id: Room ID to send the message to.
+    - sender_id: The ID of the user who sent the message.
+  """
+  @spec create_message(%{
+          required(:message) => String.t(),
+          required(:room_id) => any,
+          required(:sender_id) => any
+        }) :: {:ok, any} | {:error, any}
+  def create_message(%{sender_id: sender_id, room_id: room_id, message: message}) do
+    Repo.transaction(fn ->
+      with {:ok, message} <- insert_message(message),
+           {:ok, users_rooms} <- get_users_rooms(%{user_id: sender_id, room_id: room_id}),
+           {:ok, updated_message} <- associate_message_with_users_rooms(message, users_rooms) do
+        updated_message
+      else
+        {:error, error} ->
+          Repo.rollback(error)
+
+        error ->
+          Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp associate_message_with_users_rooms(%Message{} = message, %UsersRooms{} = users_rooms) do
+    message
+    |> Repo.preload(:users_rooms)
+    |> Ecto.Changeset.change(%{})
+    |> Ecto.Changeset.put_assoc(:users_rooms, users_rooms)
+    |> Repo.update()
+  end
+
+  defp insert_message(content) do
+    %{content: content}
+    |> Message.insert_changeset()
+    |> Repo.insert()
+  end
+
+  defp get_users_rooms(%{user_id: user_id, room_id: room_id}) do
+    case Repo.get_by(UsersRooms, user_id: user_id, room_id: room_id) do
+      nil -> {:error, "Conversation not found"}
+      users_rooms -> {:ok, users_rooms}
     end
   end
 
