@@ -5,7 +5,7 @@ defmodule Chatnix.ConversationTest do
   use Chatnix.DataCase, async: true
   alias Chatnix.Conversation
   alias Chatnix.Repo
-  alias Chatnix.Schemas.Room
+  alias Chatnix.Schemas.{Room, Message}
   alias Chatnix.TestHelpers.EctoChangeset
 
   describe "&create_room/1" do
@@ -105,6 +105,59 @@ defmodule Chatnix.ConversationTest do
 
     test "deletes the message with valid params" do
       assert {:ok, _message} = Conversation.delete_message(%{user_id: 1, message_id: 1})
+    end
+  end
+
+  describe "&update_message/1" do
+    test "returns error when user_id does not exist" do
+      assert {:error, _message} =
+               Conversation.update_message(%{
+                 user_id: 10,
+                 message_id: 1,
+                 message: "Hello"
+               })
+    end
+
+    test "returns error when message_id does not exist" do
+      assert {:error, _message} =
+               Conversation.update_message(%{
+                 user_id: 1,
+                 message_id: 10,
+                 message: "Hello"
+               })
+    end
+
+    test "returns error when message is empty" do
+      assert {:error, _message} =
+               Conversation.update_message(%{
+                 user_id: 1,
+                 message_id: 1,
+                 message: ""
+               })
+    end
+
+    test "returns error when the user does not own the message" do
+      assert {:error, _message} =
+               Conversation.update_message(%{
+                 user_id: 2,
+                 message_id: 1,
+                 message: "Hello"
+               })
+    end
+
+    test "updates message with valid params" do
+      old_message = Repo.get(Message, 1)
+      new_message = "This is the new message"
+
+      assert {:ok, message} =
+               Conversation.update_message(%{
+                 user_id: 1,
+                 message_id: 1,
+                 message: new_message
+               })
+
+      assert !is_nil(message.content)
+      assert message.content !== old_message
     end
   end
 end

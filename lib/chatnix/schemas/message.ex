@@ -23,4 +23,11 @@ defmodule Chatnix.Schemas.Message do
     |> validate_required([:content])
     |> validate_length(:content, min: 1)
   end
+
+  def changeset(%Message{} = message, params) do
+    message
+    |> cast(params, [:content])
+    |> validate_required([:content])
+    |> validate_length(:content, min: 1)
+  end
 end
