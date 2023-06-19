@@ -12,6 +12,7 @@ defmodule Chatnix.Schemas.Room do
 
   schema "rooms" do
     field :name, :string
+    field :is_private, :boolean
 
     many_to_many :users, User, join_through: "users_rooms"
 
@@ -20,8 +21,8 @@ defmodule Chatnix.Schemas.Room do
 
   def insert_changeset(params) do
     %Room{}
-    |> cast(params, [:name])
-    |> validate_required([:name])
+    |> cast(params, [:name, :is_private])
+    |> validate_required([:name, :is_private])
     |> validate_length(:name, min: 3)
     |> unique_constraint(:name)
   end

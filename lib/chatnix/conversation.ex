@@ -14,14 +14,16 @@ defmodule Chatnix.Conversation do
 
     - name: The room's name
     - participants: List of map with `id` key for user ID
+    - is_private: Whether the room is private or public
   """
   @spec create_room(%{
           required(:name) => String.t(),
-          required(:participants) => list(%{id: id()})
+          required(:participants) => list(%{id: id()}),
+          :is_private => boolean()
         }) :: {:ok, any} | {:error, any}
-  def create_room(%{name: name, participants: participants}) do
+  def create_room(%{name: name, participants: participants, is_private: is_private}) do
     Repo.transaction(fn ->
-      with {:ok, room} <- insert_room(name),
+      with {:ok, room} <- insert_room(name, is_private),
            {:ok, users} <- get_users(participants),
            {:ok, updated_room} <- associate_room_with_users(room, users) do
         updated_room
@@ -229,8 +231,8 @@ defmodule Chatnix.Conversation do
     |> Repo.update()
   end
 
-  defp insert_room(name) do
-    %{name: name}
+  defp insert_room(name, is_private) do
+    %{name: name, is_private: is_private}
     |> Room.insert_changeset()
     |> Repo.insert()
   end

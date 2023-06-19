@@ -16,7 +16,8 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 1},
                    %{id: 2}
-                 ]
+                 ],
+                 is_private: false
                })
 
       assert EctoChangeset.fetch_error_constraint(changeset, :name, :constraint) === :unique
@@ -24,7 +25,11 @@ defmodule Chatnix.ConversationTest do
 
     test "returns error when room name is shorter than 3" do
       assert {:error, changeset} =
-               Conversation.create_room(%{name: "22", participants: [%{id: 1}]})
+               Conversation.create_room(%{
+                 name: "22",
+                 participants: [%{id: 1}],
+                 is_private: false
+               })
 
       assert EctoChangeset.fetch_error_constraint(changeset, :name, :validation) === :length
       assert EctoChangeset.fetch_error_constraint(changeset, :name, :kind) === :min
@@ -37,7 +42,8 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 100},
                    %{id: 200}
-                 ]
+                 ],
+                 is_private: false
                })
 
       new_room = Repo.get_by(Room, name: "Room 2")
@@ -51,7 +57,8 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 1},
                    %{id: 2}
-                 ]
+                 ],
+                 is_private: false
                })
     end
   end

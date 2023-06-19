@@ -26,6 +26,11 @@ alias Chatnix.{Auth, Conversation}
     password: "asdfasdfasdf"
   })
 
-{:ok, room} = Conversation.create_room(%{name: "Room 1", participants: [user_1, user_2]})
+{:ok, room} =
+  Conversation.create_room(%{
+    name: "Room 1",
+    participants: [user_1, user_2],
+    is_private: false
+  })
 
 Conversation.create_message(%{room_id: room.id, sender_id: user_1.id, message: "Hello"})
