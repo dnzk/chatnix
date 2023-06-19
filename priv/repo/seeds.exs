@@ -26,10 +26,18 @@ alias Chatnix.{Auth, Conversation}
     password: "asdfasdfasdf"
   })
 
+{:ok, user_3} =
+  Auth.create_user(%{
+    username: "user_3",
+    email: "user_3@example.com",
+    password: "asdfasdfasdf"
+  })
+
 {:ok, room} =
   Conversation.create_room(%{
     name: "Room 1",
-    participants: [user_1, user_2],
+    admin: user_1,
+    participants: [user_2, user_3],
     is_private: false
   })
 

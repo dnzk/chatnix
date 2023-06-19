@@ -5,7 +5,7 @@ defmodule Chatnix.ConversationTest do
   use Chatnix.DataCase, async: true
   alias Chatnix.Conversation
   alias Chatnix.Repo
-  alias Chatnix.Schemas.{Room, Message}
+  alias Chatnix.Schemas.{Room, Message, RoomAccess, UsersRooms}
   alias Chatnix.TestHelpers.EctoChangeset
 
   describe "&create_room/1" do
@@ -13,9 +13,10 @@ defmodule Chatnix.ConversationTest do
       assert {:error, changeset} =
                Conversation.create_room(%{
                  name: "Room 1",
+                 admin: %{id: 1},
                  participants: [
-                   %{id: 1},
-                   %{id: 2}
+                   %{id: 2},
+                   %{id: 3}
                  ],
                  is_private: false
                })
@@ -27,7 +28,8 @@ defmodule Chatnix.ConversationTest do
       assert {:error, changeset} =
                Conversation.create_room(%{
                  name: "22",
-                 participants: [%{id: 1}],
+                 admin: %{id: 1},
+                 participants: [%{id: 2}],
                  is_private: false
                })
 
@@ -39,6 +41,7 @@ defmodule Chatnix.ConversationTest do
       assert {:error, _error} =
                Conversation.create_room(%{
                  name: "Room 2",
+                 admin: %{id: 101},
                  participants: [
                    %{id: 100},
                    %{id: 200}
@@ -54,12 +57,30 @@ defmodule Chatnix.ConversationTest do
       assert {:ok, _room} =
                Conversation.create_room(%{
                  name: "Room 2",
+                 admin: %{id: 1},
                  participants: [
-                   %{id: 1},
-                   %{id: 2}
+                   %{id: 2},
+                   %{id: 3}
                  ],
                  is_private: false
                })
+    end
+
+    test "room creator becomes the admin" do
+      assert {:ok, room} =
+               Conversation.create_room(%{
+                 name: "Room 2",
+                 admin: %{id: 1},
+                 participants: [
+                   %{id: 2},
+                   %{id: 3}
+                 ],
+                 is_private: false
+               })
+
+      users_rooms = Repo.get_by(UsersRooms, user_id: 1, room_id: room.id)
+      access_rights = Repo.get_by(RoomAccess, users_rooms_id: users_rooms.id)
+      assert access_rights.is_admin
     end
   end
 

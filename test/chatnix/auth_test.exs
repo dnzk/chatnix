@@ -10,7 +10,7 @@ defmodule Chatnix.AuthTest do
     test "returns error when email is taken" do
       assert {:error, changeset} =
                Auth.create_user(%{
-                 username: "user_3",
+                 username: "user_0",
                  email: "user_1@example.com",
                  password: "asdfasdfasdasdf"
                })
