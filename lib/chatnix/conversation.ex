@@ -2,8 +2,7 @@ defmodule Chatnix.Conversation do
   @moduledoc """
   Conversation context
   """
-  alias Chatnix.Schemas.UsersRooms
-  alias Chatnix.Schemas.{Room, User, Message}
+  alias Chatnix.Schemas.{Room, User, Message, UsersRooms}
   alias Chatnix.Repo
 
   @doc """
@@ -79,6 +78,82 @@ defmodule Chatnix.Conversation do
     end)
   end
 
+  @doc """
+  Deletes a message.
+
+  ## Parameters
+
+    - message_id: The message ID to delete.
+    - user_id: The user ID who owns the message.
+  """
+  @spec delete_message(%{
+          required(:message_id) => any,
+          required(:user_id) => any
+        }) :: {:ok, Ecto.Schema.t()} | {:error, any}
+  def delete_message(%{user_id: user_id, message_id: message_id}) do
+    Repo.transaction(fn ->
+      with {:ok, user} <- get_user(user_id),
+           {:ok, message} <- get_message(message_id),
+           :ok <- message_belongs_to_user(user, message),
+           {:ok, deleted_message} <- Repo.delete(message) do
+        deleted_message
+      else
+        {:error, error} ->
+          Repo.rollback(error)
+
+        error ->
+          Repo.rollback(error)
+      end
+    end)
+  end
+
+  @doc """
+  Gets a User.
+
+  ## Parameters
+
+    - user_id: The user's ID
+  """
+  @spec get_user(integer() | String.t()) :: {:ok, Ecto.Schema.t()} | {:error, any}
+  def get_user(user_id) do
+    case Repo.get(User, user_id) do
+      nil -> {:error, "User not found"}
+      user -> {:ok, user}
+    end
+  end
+
+  @doc """
+  Gets a message.
+
+  ## Parameters
+
+    - THe message ID to get
+  """
+  @spec get_message(any) :: {:error, String.t()} | {:ok, Ecto.Schema.t()}
+  def get_message(message_id) do
+    case Repo.get(Message, message_id) do
+      nil -> {:error, "Message not found"}
+      message -> {:ok, message}
+    end
+  end
+
+  defp message_belongs_to_user(
+         %User{
+           id: user_id
+         },
+         %Message{
+           users_rooms_id: users_rooms_id
+         }
+       ) do
+    with {:ok, users_rooms} <- get_users_rooms(users_rooms_id),
+         true <- users_rooms.user_id === user_id do
+      :ok
+    else
+      {:error, error} -> {:error, error}
+      error -> {:error, error}
+    end
+  end
+
   defp associate_message_with_users_rooms(%Message{} = message, %UsersRooms{} = users_rooms) do
     message
     |> Repo.preload(:users_rooms)
@@ -95,6 +170,13 @@ defmodule Chatnix.Conversation do
 
   defp get_users_rooms(%{user_id: user_id, room_id: room_id}) do
     case Repo.get_by(UsersRooms, user_id: user_id, room_id: room_id) do
+      nil -> {:error, "Conversation not found"}
+      users_rooms -> {:ok, users_rooms}
+    end
+  end
+
+  defp get_users_rooms(id) do
+    case Repo.get(UsersRooms, id) do
       nil -> {:error, "Conversation not found"}
       users_rooms -> {:ok, users_rooms}
     end

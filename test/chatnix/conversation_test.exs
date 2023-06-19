@@ -89,4 +89,22 @@ defmodule Chatnix.ConversationTest do
                Conversation.create_message(%{sender_id: 1, room_id: 1, message: "Test"})
     end
   end
+
+  describe "&delete_message/1" do
+    test "returns error when user_id does not exist" do
+      assert {:error, _message} = Conversation.delete_message(%{user_id: 100, message_id: 1})
+    end
+
+    test "returns error when message_id does not exist" do
+      assert {:error, _message} = Conversation.delete_message(%{user_id: 1, message_id: 100})
+    end
+
+    test "returns error when message does not belong to the user" do
+      assert {:error, _message} = Conversation.delete_message(%{user_id: 2, message_id: 1})
+    end
+
+    test "deletes the message with valid params" do
+      assert {:ok, _message} = Conversation.delete_message(%{user_id: 1, message_id: 1})
+    end
+  end
 end
