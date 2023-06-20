@@ -33,7 +33,7 @@ defmodule Chatnix.Conversation do
     Repo.transaction(fn ->
       with {:ok, admin} <- get_user(admin_id),
            {:ok, room} <- insert_room(name, is_private),
-           {:ok, users} <- get_users(participants),
+           users <- get_users(participants),
            {:ok, updated_room} <- associate_room_with_users(room, [admin | users]),
            {:ok, _updated_access_rights} <- create_access_right(admin, room, %{is_admin: true}) do
         updated_room
@@ -62,39 +62,51 @@ defmodule Chatnix.Conversation do
     end
   end
 
-  defp create_access_right(
-         %User{id: user_id},
-         %Room{id: room_id},
-         %{is_admin: _is_admin} = params
-       ) do
+  @doc """
+  Adds users to room.
+
+  ## Parameters
+
+    - admin: Map containing id key for the admin's ID
+    - room: Map containing id key for the room's ID
+    - users: List of map containing id key for the user's ID
+
+  ## Examples
+
+    iex> Conversation.add_users_to_room(%{admin: %{id: 1}, room: %{id: 1}, users: [%{id: 2}, %{id: 3}]})
+  """
+  @spec add_users_to_room(%{
+          required(:admin) => %{
+            required(:id) => id()
+          },
+          required(:room) => %{
+            required(:id) => id()
+          },
+          :users =>
+            list(%{
+              required(:id) => id()
+            })
+        }) :: {:ok, any} | {:error, any}
+  def add_users_to_room(%{
+        admin: %{id: admin_id},
+        users: users,
+        room: %{id: room_id}
+      }) do
     Repo.transaction(fn ->
-      with {:ok, access_right} <- attempt_insert_room_access(params),
-           {:ok, users_rooms} <- get_users_rooms(%{user_id: user_id, room_id: room_id}),
-           {:ok, updated_access_right} <-
-             associate_access_right_with_users_rooms(access_right, users_rooms) do
-        updated_access_right
+      with {:ok, admin} <- get_user(admin_id),
+           users <- get_users(users),
+           {:ok, room} <- get_room(room_id),
+           true <- room_belongs_to_admin(room, admin),
+           {:ok, updated_rooms} <- associate_room_with_users(room, users) do
+        updated_rooms
       else
-        {:error, error} -> Repo.rollback(error)
-        error -> Repo.rollback(error)
+        {:error, error} ->
+          Repo.rollback(error)
+
+        error ->
+          Repo.rollback(error)
       end
     end)
-  end
-
-  defp attempt_insert_room_access(%{is_admin: _is_admin} = params) do
-    %RoomAccess{}
-    |> RoomAccess.changeset(params)
-    |> Repo.insert()
-  end
-
-  defp associate_access_right_with_users_rooms(
-         %RoomAccess{} = room_access,
-         %UsersRooms{} = users_rooms
-       ) do
-    room_access
-    |> Repo.preload(:users_rooms)
-    |> Ecto.Changeset.change(%{})
-    |> Ecto.Changeset.put_assoc(:users_rooms, users_rooms)
-    |> Repo.update()
   end
 
   @doc """
@@ -187,12 +199,6 @@ defmodule Chatnix.Conversation do
     end)
   end
 
-  defp attempt_update_message(%Message{} = message, content) do
-    message
-    |> Message.changeset(%{content: content})
-    |> Repo.update()
-  end
-
   @doc """
   Gets a message.
 
@@ -221,6 +227,63 @@ defmodule Chatnix.Conversation do
       nil -> {:error, "User not found"}
       user -> {:ok, user}
     end
+  end
+
+  defp get_room(room_id) do
+    case Repo.get(Room, room_id) do
+      nil -> {:error, "Room not found"}
+      room -> {:ok, room}
+    end
+  end
+
+  defp room_belongs_to_admin(%Room{id: room_id}, %User{id: admin_id}) do
+    users_rooms = Repo.get_by(UsersRooms, user_id: admin_id, room_id: room_id)
+
+    case Repo.get_by(RoomAccess, users_rooms_id: users_rooms.id) do
+      nil -> false
+      room_access -> room_access.is_admin
+    end
+  end
+
+  defp create_access_right(
+         %User{id: user_id},
+         %Room{id: room_id},
+         %{is_admin: _is_admin} = params
+       ) do
+    Repo.transaction(fn ->
+      with {:ok, access_right} <- attempt_insert_room_access(params),
+           {:ok, users_rooms} <- get_users_rooms(%{user_id: user_id, room_id: room_id}),
+           {:ok, updated_access_right} <-
+             associate_access_right_with_users_rooms(access_right, users_rooms) do
+        updated_access_right
+      else
+        {:error, error} -> Repo.rollback(error)
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp attempt_insert_room_access(%{is_admin: _is_admin} = params) do
+    %RoomAccess{}
+    |> RoomAccess.changeset(params)
+    |> Repo.insert()
+  end
+
+  defp associate_access_right_with_users_rooms(
+         %RoomAccess{} = room_access,
+         %UsersRooms{} = users_rooms
+       ) do
+    room_access
+    |> Repo.preload(:users_rooms)
+    |> Ecto.Changeset.change(%{})
+    |> Ecto.Changeset.put_assoc(:users_rooms, users_rooms)
+    |> Repo.update()
+  end
+
+  defp attempt_update_message(%Message{} = message, content) do
+    message
+    |> Message.changeset(%{content: content})
+    |> Repo.update()
   end
 
   defp message_belongs_to_user(
@@ -269,11 +332,21 @@ defmodule Chatnix.Conversation do
   end
 
   defp associate_room_with_users(%Room{} = room, users) do
+    room = Repo.preload(room, :users)
+
     room
     |> Repo.preload(:users)
     |> Ecto.Changeset.change(%{})
-    |> Ecto.Changeset.put_assoc(:users, users)
+    |> Ecto.Changeset.put_assoc(:users, deduplicate_users(room.users, users))
     |> Repo.update()
+  end
+
+  defp deduplicate_users(existing_users, new_users) do
+    existing_ids = Enum.map(existing_users, & &1.id)
+
+    new_users
+    |> Enum.filter(fn %{id: id} -> !Enum.member?(existing_ids, id) end)
+    |> Kernel.++(existing_users)
   end
 
   defp insert_room(name, is_private) do
@@ -285,14 +358,8 @@ defmodule Chatnix.Conversation do
   defp get_users(participants) do
     user_ids = Enum.map(participants, & &1.id)
 
-    users =
-      User
-      |> User.get_all_by_id(user_ids)
-      |> Repo.all()
-
-    case users do
-      [] -> {:error, "Users not found"}
-      _ -> {:ok, users}
-    end
+    User
+    |> User.get_all_by_id(user_ids)
+    |> Repo.all()
   end
 end

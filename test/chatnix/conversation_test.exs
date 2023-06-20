@@ -7,6 +7,8 @@ defmodule Chatnix.ConversationTest do
   alias Chatnix.Repo
   alias Chatnix.Schemas.{Room, Message, RoomAccess, UsersRooms}
   alias Chatnix.TestHelpers.EctoChangeset
+  alias Chatnix.Auth
+  doctest Chatnix.Conversation
 
   describe "&create_room/1" do
     test "returns error when room name is taken" do
@@ -81,6 +83,16 @@ defmodule Chatnix.ConversationTest do
       users_rooms = Repo.get_by(UsersRooms, user_id: 1, room_id: room.id)
       access_rights = Repo.get_by(RoomAccess, users_rooms_id: users_rooms.id)
       assert access_rights.is_admin
+    end
+
+    test "creates room with empty participants" do
+      assert {:ok, _room} =
+               Conversation.create_room(%{
+                 name: "Empty room",
+                 admin: %{id: 1},
+                 participants: [],
+                 is_private: false
+               })
     end
   end
 
@@ -186,6 +198,91 @@ defmodule Chatnix.ConversationTest do
 
       assert !is_nil(message.content)
       assert message.content !== old_message
+    end
+  end
+
+  describe "&add_users_to_room/1" do
+    test "returns error when admin does not exist" do
+      assert {:error, _error} =
+               Conversation.add_users_to_room(%{
+                 admin: %{id: 100},
+                 users: [%{id: 1}],
+                 room: %{id: 1}
+               })
+    end
+
+    test "returns error when room does not exist" do
+      assert {:error, _error} =
+               Conversation.add_users_to_room(%{
+                 admin: %{id: 1},
+                 users: [%{id: 1}],
+                 room: %{id: 100}
+               })
+    end
+
+    test "returns error when room does not belong to admin" do
+      assert {:error, _error} =
+               Conversation.add_users_to_room(%{
+                 admin: %{id: 2},
+                 users: [%{id: 1}],
+                 room: %{id: 1}
+               })
+    end
+
+    test "does not duplicate users" do
+      q = from ur in UsersRooms, where: ur.user_id in [1, 2, 3]
+      user_room_connections = Repo.all(q)
+
+      assert length(user_room_connections) === 3
+
+      assert {:ok, _updated} =
+               Conversation.add_users_to_room(%{
+                 admin: %{id: 1},
+                 users: [%{id: 2}, %{id: 3}],
+                 room: %{id: 1}
+               })
+
+      user_room_connections = Repo.all(q)
+
+      assert length(user_room_connections) === 3
+    end
+
+    test "adds users to room with valid params" do
+      # create room
+      # create users
+      # add users to room
+      {:ok, room} =
+        Conversation.create_room(%{
+          name: "test room",
+          participants: [],
+          admin: %{id: 1},
+          is_private: false
+        })
+
+      q = from ur in UsersRooms, where: ur.room_id == ^room.id
+      assert length(Repo.all(q)) == 1
+
+      {:ok, user_a} =
+        Auth.create_user(%{
+          email: "user_a@example.com",
+          username: "user_a",
+          password: "asdfasdfasdfasdf"
+        })
+
+      {:ok, user_b} =
+        Auth.create_user(%{
+          email: "user_b@example.com",
+          username: "user_b",
+          password: "asdfasdfasdfasdf"
+        })
+
+      Conversation.add_users_to_room(%{
+        admin: %{id: 1},
+        room: %{id: room.id},
+        users: [%{id: user_a.id}, %{id: user_b.id}]
+      })
+
+      assert length(Repo.all(q)) == 3
     end
   end
 end
