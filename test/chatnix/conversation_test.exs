@@ -310,4 +310,62 @@ defmodule Chatnix.ConversationTest do
       assert is_nil(Repo.get_by(UsersRooms, user_id: 2, room_id: 1))
     end
   end
+
+  describe "&send_message_to_room/1" do
+    test "returns error when user does not exist" do
+      assert {:error, _e} =
+               Conversation.send_message_to_room(%{
+                 message: "Hey room",
+                 room: %{id: 1},
+                 sender: %{id: 100}
+               })
+    end
+
+    test "returns error when room does not exist" do
+      assert {:error, _e} =
+               Conversation.send_message_to_room(%{
+                 message: "Hey room",
+                 room: %{id: 100},
+                 sender: %{id: 1}
+               })
+    end
+
+    test "returns error when message is empty" do
+      assert {:error, _e} =
+               Conversation.send_message_to_room(%{
+                 message: "",
+                 room: %{id: 1},
+                 sender: %{id: 1}
+               })
+    end
+
+    test "return error when user does not belong in the room" do
+      {:ok, user_a} =
+        Auth.create_user(%{
+          email: "user_a@example.com",
+          username: "user_a",
+          password: "asdfasdfasdf"
+        })
+
+      assert {:error, _e} =
+               Conversation.send_message_to_room(%{
+                 message: "Hey room",
+                 room: %{id: 1},
+                 sender: %{id: user_a.id}
+               })
+    end
+
+    test "sends message to room with valid params" do
+      assert {:ok, r} =
+               Conversation.send_message_to_room(%{
+                 message: "Hey room",
+                 room: %{id: 1},
+                 sender: %{id: 2}
+               })
+
+      ur = Repo.get_by(UsersRooms, room_id: 1, user_id: 2)
+      m = Repo.get_by(Message, users_rooms_id: ur.id, id: r.id)
+      assert !is_nil(m)
+    end
+  end
 end

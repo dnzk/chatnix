@@ -152,6 +152,42 @@ defmodule Chatnix.Conversation do
   end
 
   @doc """
+  Sends message to room.
+
+  ## Parameters
+
+    - message: The message to send to room.
+    - room: Map containing id key for the room ID.
+    - sender: Map containing id key for the sender ID>
+  """
+  @spec send_message_to_room(%{
+          required(:message) => String.t(),
+          required(:room) => %{
+            required(:id) => id()
+          },
+          required(:sender) => %{
+            required(:id) => id()
+          }
+        }) :: {:ok, any()} | {:error, any()}
+  def send_message_to_room(%{
+        sender: %{id: sender_id},
+        room: %{id: room_id},
+        message: content
+      }) do
+    Repo.transaction(fn ->
+      with {:ok, _sender} <- get_user(sender_id),
+           {:ok, _room} <- get_room(room_id),
+           {:ok, message} <-
+             create_message(%{room_id: room_id, sender_id: sender_id, message: content}) do
+        message
+      else
+        {:error, error} -> Repo.rollback(error)
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  @doc """
   Creates a message.
 
   ## Parameters
