@@ -248,9 +248,6 @@ defmodule Chatnix.ConversationTest do
     end
 
     test "adds users to room with valid params" do
-      # create room
-      # create users
-      # add users to room
       {:ok, room} =
         Conversation.create_room(%{
           name: "test room",
@@ -283,6 +280,34 @@ defmodule Chatnix.ConversationTest do
       })
 
       assert length(Repo.all(q)) == 3
+    end
+  end
+
+  describe "&remove_users_from_room/1" do
+    test "returns error when admin does not exist" do
+      assert {:error, _error} =
+               Conversation.remove_users_from_room(%{admin: %{id: 100}, room: %{id: 1}, users: []})
+    end
+
+    test "return error when room does not exist" do
+      assert {:error, _error} =
+               Conversation.remove_users_from_room(%{admin: %{id: 1}, room: %{id: 100}, users: []})
+    end
+
+    test "return error when room does not belong to admin" do
+      assert {:error, _error} =
+               Conversation.remove_users_from_room(%{admin: %{id: 2}, room: %{id: 1}, users: []})
+    end
+
+    test "removes users from room" do
+      assert {:ok, _room} =
+               Conversation.remove_users_from_room(%{
+                 admin: %{id: 1},
+                 room: %{id: 1},
+                 users: [%{id: 2}]
+               })
+
+      assert is_nil(Repo.get_by(UsersRooms, user_id: 2, room_id: 1))
     end
   end
 end

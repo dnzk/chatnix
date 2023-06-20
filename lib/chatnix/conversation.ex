@@ -110,6 +110,48 @@ defmodule Chatnix.Conversation do
   end
 
   @doc """
+  Removes users from room.
+
+  ## Parameteres
+
+    - admin: Map containing id key for admin ID
+    - room: Map containing id key for room ID
+    - users: List of users map containing id key for user ID
+  """
+  @spec remove_users_from_room(%{
+          required(:admin) => %{
+            required(:id) => id()
+          },
+          required(:room) => %{
+            required(:id) => id()
+          },
+          required(:users) =>
+            list(%{
+              required(:id) => id()
+            })
+        }) :: {:ok, any} | {:error, any}
+  def remove_users_from_room(%{
+        admin: %{id: admin_id},
+        room: %{id: room_id},
+        users: users
+      }) do
+    Repo.transaction(fn ->
+      with {:ok, admin} <- get_user(admin_id),
+           users <- get_users(users),
+           {:ok, room} <- get_room(room_id),
+           true <- room_belongs_to_admin(room, admin) do
+        disassociate_room_with_users(room, users)
+      else
+        {:error, error} ->
+          Repo.rollback(error)
+
+        error ->
+          Repo.rollback(error)
+      end
+    end)
+  end
+
+  @doc """
   Creates a message.
 
   ## Parameters
@@ -335,10 +377,17 @@ defmodule Chatnix.Conversation do
     room = Repo.preload(room, :users)
 
     room
-    |> Repo.preload(:users)
     |> Ecto.Changeset.change(%{})
     |> Ecto.Changeset.put_assoc(:users, deduplicate_users(room.users, users))
     |> Repo.update()
+  end
+
+  defp disassociate_room_with_users(%Room{id: room_id}, users) do
+    users_id = Enum.map(users, & &1.id)
+
+    UsersRooms
+    |> UsersRooms.get_by_room_and_users(room_id, users_id)
+    |> Repo.delete_all()
   end
 
   defp deduplicate_users(existing_users, new_users) do
