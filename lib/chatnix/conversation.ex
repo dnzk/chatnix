@@ -63,6 +63,15 @@ defmodule Chatnix.Conversation do
   end
 
   @doc """
+  Get all rooms.
+
+  """
+  @spec get_all_rooms() :: {:ok, [Room.t()]}
+  def get_all_rooms() do
+    {:ok, Repo.all(Room)}
+  end
+
+  @doc """
   Adds users to room.
 
   ## Parameters

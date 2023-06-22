@@ -446,4 +446,25 @@ defmodule Chatnix.ConversationTest do
       assert length(messages) === 3
     end
   end
+
+  describe "&get_all_rooms/0" do
+    test "returns list of all rooms" do
+      Conversation.create_room(%{
+        name: "Room 2",
+        participants: [%{id: 2}],
+        is_private: true,
+        admin: %{id: 1}
+      })
+
+      Conversation.create_room(%{
+        name: "Room 3",
+        participants: [%{id: 3}],
+        is_private: true,
+        admin: %{id: 2}
+      })
+
+      assert {:ok, rooms} = Conversation.get_all_rooms()
+      assert length(rooms) === 3
+    end
+  end
 end
