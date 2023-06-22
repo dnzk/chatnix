@@ -19,8 +19,7 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 2},
                    %{id: 3}
-                 ],
-                 is_private: false
+                 ]
                })
 
       assert EctoChangeset.fetch_error_constraint(changeset, :name, :constraint) === :unique
@@ -31,8 +30,7 @@ defmodule Chatnix.ConversationTest do
                Conversation.create_room(%{
                  name: "22",
                  admin: %{id: 1},
-                 participants: [%{id: 2}],
-                 is_private: false
+                 participants: [%{id: 2}]
                })
 
       assert EctoChangeset.fetch_error_constraint(changeset, :name, :validation) === :length
@@ -47,8 +45,7 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 100},
                    %{id: 200}
-                 ],
-                 is_private: false
+                 ]
                })
 
       new_room = Repo.get_by(Room, name: "Room 2")
@@ -63,8 +60,7 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 2},
                    %{id: 3}
-                 ],
-                 is_private: false
+                 ]
                })
     end
 
@@ -76,8 +72,7 @@ defmodule Chatnix.ConversationTest do
                  participants: [
                    %{id: 2},
                    %{id: 3}
-                 ],
-                 is_private: false
+                 ]
                })
 
       users_rooms = Repo.get_by(UsersRooms, user_id: 1, room_id: room.id)
@@ -90,8 +85,7 @@ defmodule Chatnix.ConversationTest do
                Conversation.create_room(%{
                  name: "Empty room",
                  admin: %{id: 1},
-                 participants: [],
-                 is_private: false
+                 participants: []
                })
     end
   end
@@ -252,8 +246,7 @@ defmodule Chatnix.ConversationTest do
         Conversation.create_room(%{
           name: "test room",
           participants: [],
-          admin: %{id: 1},
-          is_private: false
+          admin: %{id: 1}
         })
 
       q = from(ur in UsersRooms, where: ur.room_id == ^room.id)
@@ -384,12 +377,14 @@ defmodule Chatnix.ConversationTest do
         })
 
       {:ok, room} =
-        Conversation.create_room(%{
-          name: "Private",
-          participants: [%{id: 2}, %{id: 3}],
-          admin: %{id: 1},
+        Conversation.create_room(
+          %{
+            name: "Private",
+            participants: [%{id: 2}, %{id: 3}],
+            admin: %{id: 1}
+          },
           is_private: true
-        })
+        )
 
       assert {:error, _error} =
                Conversation.read_messages_in_room(%{
@@ -449,19 +444,23 @@ defmodule Chatnix.ConversationTest do
 
   describe "&get_all_rooms/0" do
     test "returns list of all rooms" do
-      Conversation.create_room(%{
-        name: "Room 2",
-        participants: [%{id: 2}],
-        is_private: true,
-        admin: %{id: 1}
-      })
+      Conversation.create_room(
+        %{
+          name: "Room 2",
+          participants: [%{id: 2}],
+          admin: %{id: 1}
+        },
+        is_private: true
+      )
 
-      Conversation.create_room(%{
-        name: "Room 3",
-        participants: [%{id: 3}],
-        is_private: true,
-        admin: %{id: 2}
-      })
+      Conversation.create_room(
+        %{
+          name: "Room 3",
+          participants: [%{id: 3}],
+          admin: %{id: 2}
+        },
+        is_private: true
+      )
 
       assert {:ok, rooms} = Conversation.get_all_rooms()
       assert length(rooms) === 3

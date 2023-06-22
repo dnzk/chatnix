@@ -5,6 +5,7 @@ defmodule Chatnix.Repo.Migrations.CreateRooms do
     create table("rooms") do
       add :name, :string
       add :is_private, :boolean
+      add :is_dm_room, :boolean
 
       timestamps()
     end
