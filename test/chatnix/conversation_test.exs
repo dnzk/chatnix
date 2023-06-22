@@ -230,7 +230,7 @@ defmodule Chatnix.ConversationTest do
     end
 
     test "does not duplicate users" do
-      q = from ur in UsersRooms, where: ur.user_id in [1, 2, 3]
+      q = from(ur in UsersRooms, where: ur.user_id in [1, 2, 3])
       user_room_connections = Repo.all(q)
 
       assert length(user_room_connections) === 3
@@ -256,7 +256,7 @@ defmodule Chatnix.ConversationTest do
           is_private: false
         })
 
-      q = from ur in UsersRooms, where: ur.room_id == ^room.id
+      q = from(ur in UsersRooms, where: ur.room_id == ^room.id)
       assert length(Repo.all(q)) == 1
 
       {:ok, user_a} =
@@ -366,6 +366,84 @@ defmodule Chatnix.ConversationTest do
       ur = Repo.get_by(UsersRooms, room_id: 1, user_id: 2)
       m = Repo.get_by(Message, users_rooms_id: ur.id, id: r.id)
       assert !is_nil(m)
+    end
+  end
+
+  describe "&read_messages_in_room/1" do
+    test "returns error when room does not exist" do
+      assert {:error, _error} =
+               Conversation.read_messages_in_room(%{room: %{id: 100}, user: %{id: 1}})
+    end
+
+    test "returns error when user does not belong to room and room is private" do
+      {:ok, user_a} =
+        Auth.create_user(%{
+          email: "user_a@example.com",
+          username: "user_a",
+          password: "asdfasdfasdfasdf"
+        })
+
+      {:ok, room} =
+        Conversation.create_room(%{
+          name: "Private",
+          participants: [%{id: 2}, %{id: 3}],
+          admin: %{id: 1},
+          is_private: true
+        })
+
+      assert {:error, _error} =
+               Conversation.read_messages_in_room(%{
+                 user: user_a,
+                 room: room
+               })
+    end
+
+    test "returns messages for user who does not belong in the non private room" do
+      {:ok, user_a} =
+        Auth.create_user(%{
+          email: "user_a@example.com",
+          username: "user_a",
+          password: "asdfasdfasdfasdf"
+        })
+
+      Conversation.send_message_to_room(%{sender: %{id: 1}, room: %{id: 1}, message: "Hi"})
+      Conversation.send_message_to_room(%{sender: %{id: 3}, room: %{id: 1}, message: "Hello"})
+
+      assert {:ok, messages} =
+               Conversation.read_messages_in_room(%{
+                 room: %{id: 1},
+                 user: user_a
+               })
+
+      assert length(messages) == 3
+    end
+
+    test "returns messages for user who belongs in the private room" do
+      {:ok, room} =
+        Conversation.create_room(%{
+          name: "Private",
+          participants: [%{id: 2}, %{id: 3}],
+          admin: %{id: 1},
+          is_private: true
+        })
+
+      Conversation.send_message_to_room(%{sender: %{id: 2}, room: room, message: "Hi"})
+
+      Conversation.send_message_to_room(%{sender: %{id: 3}, room: room, message: "Hello"})
+
+      assert {:ok, messages} = Conversation.read_messages_in_room(%{room: room, user: %{id: 1}})
+
+      assert length(messages) == 2
+    end
+
+    test "returns messages for user who belongs in the non private room" do
+      Conversation.send_message_to_room(%{sender: %{id: 1}, room: %{id: 1}, message: "Hi"})
+      Conversation.send_message_to_room(%{sender: %{id: 3}, room: %{id: 1}, message: "Hello"})
+
+      assert {:ok, messages} =
+               Conversation.read_messages_in_room(%{room: %{id: 1}, user: %{id: 1}})
+
+      assert length(messages) === 3
     end
   end
 end

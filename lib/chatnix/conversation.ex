@@ -188,6 +188,36 @@ defmodule Chatnix.Conversation do
   end
 
   @doc """
+  Read messages in a room.
+
+  ## Parameters
+
+    - room: Map containing id key for the room ID
+    - user: Map containing id key for the user ID
+  """
+  @spec read_messages_in_room(%{
+          required(:room) => %{
+            required(:id) => id()
+          },
+          required(:user) => %{
+            required(:id) => id()
+          }
+        }) :: {:ok, any()} | {:error, any()}
+  def read_messages_in_room(%{
+        user: %{id: user_id},
+        room: %{id: room_id}
+      }) do
+    if user_belongs_to_room(%{user_id: user_id, room_id: room_id}) do
+      {:ok, get_messages_by_room(room_id)}
+    else
+      case get_room(room_id) do
+        {:ok, room} -> attempt_read_messages(room)
+        error -> error
+      end
+    end
+  end
+
+  @doc """
   Creates a message.
 
   ## Parameters
@@ -307,6 +337,20 @@ defmodule Chatnix.Conversation do
     end
   end
 
+  defp attempt_read_messages(%Room{is_private: false, id: room_id}) do
+    {:ok, get_messages_by_room(room_id)}
+  end
+
+  defp attempt_read_messages(%Room{is_private: true}) do
+    {:error, "Room is private"}
+  end
+
+  defp get_messages_by_room(room_id) do
+    Message
+    |> Message.get_by_room(room_id)
+    |> Repo.all()
+  end
+
   defp get_room(room_id) do
     case Repo.get(Room, room_id) do
       nil -> {:error, "Room not found"}
@@ -393,6 +437,13 @@ defmodule Chatnix.Conversation do
     %{content: content}
     |> Message.insert_changeset()
     |> Repo.insert()
+  end
+
+  defp user_belongs_to_room(%{user_id: _user_id, room_id: _room_id} = params) do
+    case get_users_rooms(params) do
+      {:ok, _} -> true
+      _ -> false
+    end
   end
 
   defp get_users_rooms(%{user_id: user_id, room_id: room_id}) do

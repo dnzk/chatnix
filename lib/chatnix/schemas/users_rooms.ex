@@ -7,6 +7,8 @@ defmodule Chatnix.Schemas.UsersRooms do
   alias Chatnix.Schemas.{Room, User, Message}
   import Ecto.Query
 
+  @type t :: %UsersRooms{}
+
   schema "users_rooms" do
     belongs_to :user, User
     belongs_to :room, Room
