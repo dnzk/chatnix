@@ -40,4 +40,14 @@ alias Chatnix.{Auth, Conversation}
     participants: [user_2, user_3]
   })
 
+{:ok, _room_1} =
+  Conversation.create_room(
+    %{
+      name: "",
+      admin: nil,
+      participants: [user_3, user_1]
+    },
+    is_dm_room: true
+  )
+
 Conversation.create_message(%{room_id: room.id, sender_id: user_1.id, message: "Hello"})

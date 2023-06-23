@@ -31,40 +31,51 @@ defmodule Chatnix.Conversation do
         %{
           name: name,
           participants: participants,
-          admin: %{id: admin_id}
+          admin: admin
         },
         options \\ []
       ) do
-    is_dm_room = Keyword.get(options, :is_dm_room, false)
-    is_private = Keyword.get(options, :is_private, false)
+    case Keyword.get(options, :is_dm_room, false) do
+      true ->
+        Repo.transaction(fn ->
+          with 2 <- length(participants),
+               false <- dm_room_exists?(participants),
+               users <- get_users(participants),
+               {:ok, room} <-
+                 insert_room(generate_dm_room_name(users), true, true),
+               {:ok, updated_room} <- associate_room_with_users(room, users) do
+            updated_room
+          else
+            {:error, error} ->
+              Repo.rollback(error)
 
-    if is_dm_room do
-      Repo.transaction(fn ->
-        with {:ok, room} <- insert_room(name, is_private, true),
-             users <- get_users(participants),
-             {:ok, updated_room} <- associate_room_with_users(room, users) do
-          updated_room
-        else
-          {:error, error} -> Repo.transaction(error)
-          error -> Repo.transaction(error)
-        end
-      end)
-    else
-      Repo.transaction(fn ->
-        with {:ok, admin} <- get_user(admin_id),
-             {:ok, room} <- insert_room(name, is_private, false),
-             users <- get_users(participants),
-             {:ok, updated_room} <- associate_room_with_users(room, [admin | users]),
-             {:ok, _updated_access_rights} <- create_access_right(admin, room, %{is_admin: true}) do
-          updated_room
-        else
-          {:error, error} ->
-            Repo.rollback(error)
+            error when is_integer(error) ->
+              Repo.rollback("DM room has to contain exactly 2 participants")
 
-          error ->
-            Repo.rollback(error)
-        end
-      end)
+            error ->
+              Repo.rollback(error)
+          end
+        end)
+
+      _ ->
+        is_private = Keyword.get(options, :is_private, false)
+
+        Repo.transaction(fn ->
+          with {:ok, admin} <- get_user(admin.id),
+               {:ok, room} <- insert_room(name, is_private, false),
+               users <- get_users(participants),
+               {:ok, updated_room} <- associate_room_with_users(room, [admin | users]),
+               {:ok, _updated_access_rights} <-
+                 create_access_right(admin, room, %{is_admin: true}) do
+            updated_room
+          else
+            {:error, error} ->
+              Repo.rollback(error)
+
+            error ->
+              Repo.rollback(error)
+          end
+        end)
     end
   end
 
@@ -365,6 +376,22 @@ defmodule Chatnix.Conversation do
       nil -> {:error, "User not found"}
       user -> {:ok, user}
     end
+  end
+
+  defp generate_dm_room_name([%User{username: username} | users]) do
+    generate_dm_room_name(users, username)
+  end
+
+  defp generate_dm_room_name([%User{username: username} | []], result) do
+    "#{result}_#{username}"
+  end
+
+  defp dm_room_exists?(participants) do
+    participants
+    |> Enum.map(& &1.id)
+    |> Room.query_dm_room()
+    |> Repo.one()
+    |> Kernel.==(length(participants))
   end
 
   defp attempt_read_messages(%Room{is_private: false, id: room_id}) do

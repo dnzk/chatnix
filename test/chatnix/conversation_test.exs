@@ -10,7 +10,7 @@ defmodule Chatnix.ConversationTest do
   alias Chatnix.Auth
   doctest Chatnix.Conversation
 
-  describe "&create_room/1" do
+  describe "&create_room/1 without options" do
     test "returns error when room name is taken" do
       assert {:error, changeset} =
                Conversation.create_room(%{
@@ -64,6 +64,18 @@ defmodule Chatnix.ConversationTest do
                })
     end
 
+    test "is_private and is_dm_room default to false" do
+      assert {:ok, room} =
+               Conversation.create_room(%{
+                 name: "Room 3",
+                 admin: %{id: 1},
+                 participants: [%{id: 2}]
+               })
+
+      assert room.is_private === false
+      assert room.is_dm_room === false
+    end
+
     test "room creator becomes the admin" do
       assert {:ok, room} =
                Conversation.create_room(%{
@@ -99,6 +111,76 @@ defmodule Chatnix.ConversationTest do
       assert {:ok, _} = Conversation.delete_room(1)
 
       assert is_nil(Repo.get(Room, 1))
+    end
+  end
+
+  describe "&create_room/1 when is_dm_room is true" do
+    test "returns error when participants are not exactly two different users" do
+      assert {:error, _r} =
+               Conversation.create_room(
+                 %{
+                   name: "",
+                   admin: nil,
+                   participants: [%{id: 1}]
+                 },
+                 is_dm_room: true
+               )
+
+      assert {:error, _r} =
+               Conversation.create_room(
+                 %{
+                   name: "",
+                   admin: nil,
+                   participants: [%{id: 1}, %{id: 2}, %{id: 3}]
+                 },
+                 is_dm_room: true
+               )
+    end
+
+    test "creates room without admin" do
+      assert {:ok, room} =
+               Conversation.create_room(
+                 %{
+                   name: "",
+                   admin: nil,
+                   participants: [%{id: 1}, %{id: 2}]
+                 },
+                 is_dm_room: true
+               )
+
+      room_access =
+        RoomAccess
+        |> RoomAccess.get_by_room(room.id)
+        |> Repo.one()
+
+      assert is_nil(room_access)
+    end
+
+    test "sets is_dm_room and is_private to true" do
+      assert {:ok, room} =
+               Conversation.create_room(
+                 %{
+                   name: "",
+                   admin: nil,
+                   participants: [%{id: 1}, %{id: 2}]
+                 },
+                 is_dm_room: true
+               )
+
+      assert room.is_dm_room
+      assert room.is_private
+    end
+
+    test "room with the same set of participants can only be created once" do
+      assert {:error, _r} =
+               Conversation.create_room(
+                 %{
+                   name: "",
+                   admin: nil,
+                   participants: [%{id: 3}, %{id: 1}]
+                 },
+                 is_dm_room: true
+               )
     end
   end
 
@@ -223,11 +305,11 @@ defmodule Chatnix.ConversationTest do
                })
     end
 
-    test "does not duplicate users" do
+    test "does not duplicate user connections" do
       q = from(ur in UsersRooms, where: ur.user_id in [1, 2, 3])
       user_room_connections = Repo.all(q)
 
-      assert length(user_room_connections) === 3
+      assert length(user_room_connections) === 5
 
       assert {:ok, _updated} =
                Conversation.add_users_to_room(%{
@@ -238,7 +320,7 @@ defmodule Chatnix.ConversationTest do
 
       user_room_connections = Repo.all(q)
 
-      assert length(user_room_connections) === 3
+      assert length(user_room_connections) === 5
     end
 
     test "adds users to room with valid params" do
@@ -463,7 +545,7 @@ defmodule Chatnix.ConversationTest do
       )
 
       assert {:ok, rooms} = Conversation.get_all_rooms()
-      assert length(rooms) === 3
+      assert length(rooms) === 4
     end
   end
 end
