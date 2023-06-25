@@ -2,6 +2,7 @@ defmodule Chatnix.AuthTest do
   @moduledoc """
   Auth context test
   """
+  alias Chatnix.Schemas.User
   use Chatnix.DataCase, async: true
   alias Chatnix.Auth
   alias Chatnix.TestHelpers.EctoChangeset
@@ -74,6 +75,33 @@ defmodule Chatnix.AuthTest do
       assert !is_nil(user.password_hash)
       assert user.password_hash !== password
       assert {:ok, _u} = Pbkdf2.check_pass(user, password)
+    end
+  end
+
+  describe "&authenticate_user/1" do
+    test "returns error when user email does not exist" do
+      assert {:error, _} =
+               Auth.authenticate_user(%{email: "user_abc@example.com", password: "asdfasdfasdf"})
+    end
+
+    test "returns error when password is not valid" do
+      assert {:error, _} =
+               Auth.authenticate_user(%{email: "user_1@example.com", password: "invalid password"})
+    end
+
+    test "returns ok when user credential is valid" do
+      assert {:ok, %User{}} =
+               Auth.authenticate_user(%{email: "user_1@example.com", password: "asdfasdfasdf"})
+    end
+  end
+
+  describe "&get_user/1" do
+    test "returns user when fetched by email" do
+      assert !is_nil(Auth.get_user(%{email: "user_1@example.com"}))
+    end
+
+    test "returns user when fetched by id" do
+      assert !is_nil(Auth.get_user(%{id: 1}))
     end
   end
 end

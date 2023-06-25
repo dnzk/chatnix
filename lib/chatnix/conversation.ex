@@ -6,8 +6,6 @@ defmodule Chatnix.Conversation do
   alias Chatnix.Schemas.{Room, User, Message, UsersRooms}
   alias Chatnix.Repo
 
-  @typep id :: String.t() | integer()
-
   @doc """
   Creates chat room.
 
@@ -21,8 +19,8 @@ defmodule Chatnix.Conversation do
   @spec create_room(
           %{
             required(:name) => String.t(),
-            required(:participants) => list(%{id: id()}),
-            required(:admin) => %{id: id()}
+            required(:participants) => list(%{id: User.id()}),
+            required(:admin) => %{id: User.id()}
           },
           is_dm_room: boolean(),
           is_private: boolean()
@@ -86,7 +84,7 @@ defmodule Chatnix.Conversation do
 
     - id: Room ID to delete
   """
-  @spec delete_room(id()) :: {:ok, any} | {:error, any}
+  @spec delete_room(User.id()) :: {:ok, any} | {:error, any}
   def delete_room(id) do
     case Repo.get(Room, id) do
       nil -> {:error, "Room not found"}
@@ -118,14 +116,14 @@ defmodule Chatnix.Conversation do
   """
   @spec add_users_to_room(%{
           required(:admin) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           required(:room) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           :users =>
             list(%{
-              required(:id) => id()
+              required(:id) => User.id()
             })
         }) :: {:ok, any} | {:error, any}
   def add_users_to_room(%{
@@ -161,14 +159,14 @@ defmodule Chatnix.Conversation do
   """
   @spec remove_users_from_room(%{
           required(:admin) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           required(:room) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           required(:users) =>
             list(%{
-              required(:id) => id()
+              required(:id) => User.id()
             })
         }) :: {:ok, any} | {:error, any}
   def remove_users_from_room(%{
@@ -204,10 +202,10 @@ defmodule Chatnix.Conversation do
   @spec send_message_to_room(%{
           required(:message) => String.t(),
           required(:room) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           required(:sender) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           }
         }) :: {:ok, any()} | {:error, any()}
   def send_message_to_room(%{
@@ -238,10 +236,10 @@ defmodule Chatnix.Conversation do
   """
   @spec read_messages_in_room(%{
           required(:room) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           },
           required(:user) => %{
-            required(:id) => id()
+            required(:id) => User.id()
           }
         }) :: {:ok, any()} | {:error, any()}
   def read_messages_in_room(%{
@@ -269,8 +267,8 @@ defmodule Chatnix.Conversation do
   """
   @spec create_message(%{
           required(:message) => String.t(),
-          required(:room_id) => id(),
-          required(:sender_id) => id()
+          required(:room_id) => User.id(),
+          required(:sender_id) => User.id()
         }) :: {:ok, any} | {:error, any}
   def create_message(%{sender_id: sender_id, room_id: room_id, message: message}) do
     Repo.transaction(fn ->
@@ -297,8 +295,8 @@ defmodule Chatnix.Conversation do
     - user_id: The user ID who owns the message.
   """
   @spec delete_message(%{
-          required(:message_id) => id(),
-          required(:user_id) => id()
+          required(:message_id) => User.id(),
+          required(:user_id) => User.id()
         }) :: {:ok, Ecto.Schema.t()} | {:error, any}
   def delete_message(%{user_id: user_id, message_id: message_id}) do
     Repo.transaction(fn ->
@@ -328,8 +326,8 @@ defmodule Chatnix.Conversation do
   """
   @spec update_message(%{
           required(:message) => String.t(),
-          required(:message_id) => id(),
-          required(:user_id) => id()
+          required(:message_id) => User.id(),
+          required(:user_id) => User.id()
         }) :: {:ok, Ecto.Schema.t()} | {:error, any}
   def update_message(%{user_id: user_id, message_id: message_id, message: content}) do
     Repo.transaction(fn ->
@@ -355,7 +353,7 @@ defmodule Chatnix.Conversation do
 
     - THe message ID to get
   """
-  @spec get_message(id()) :: {:error, String.t()} | {:ok, Ecto.Schema.t()}
+  @spec get_message(User.id()) :: {:error, String.t()} | {:ok, Ecto.Schema.t()}
   def get_message(message_id) do
     case Repo.get(Message, message_id) do
       nil -> {:error, "Message not found"}
@@ -363,16 +361,8 @@ defmodule Chatnix.Conversation do
     end
   end
 
-  @doc """
-  Gets a User.
-
-  ## Parameters
-
-    - user_id: The user's ID
-  """
-  @spec get_user(id()) :: {:ok, Ecto.Schema.t()} | {:error, any}
-  def get_user(user_id) do
-    case Repo.get(User, user_id) do
+  defp get_user(id) do
+    case Chatnix.Auth.get_user(%{id: id}) do
       nil -> {:error, "User not found"}
       user -> {:ok, user}
     end

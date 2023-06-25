@@ -9,6 +9,7 @@ defmodule Chatnix.Schemas.User do
   alias Chatnix.Schemas.Room
 
   @type t :: %User{}
+  @type id :: String.t() | integer()
 
   schema "users" do
     field :username, :string
