@@ -7,6 +7,11 @@
 # General application configuration
 import Config
 
+config :chatnix, Chatnix.Guardian,
+  issuer: "chatnix",
+  secret_key: "664c9OeJYvhEVO4zd7jUUHoH3i/eEMuXfY9Zau7fNIJBlRNsFNmf5/O5T9hrBylm",
+  ttl: {1, :day}
+
 config :chatnix,
   ecto_repos: [Chatnix.Repo]
 

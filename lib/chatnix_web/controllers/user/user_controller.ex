@@ -20,4 +20,16 @@ defmodule ChatnixWeb.UserController do
         |> render(:sign_up, error: %{message: "Something went wrong"})
     end
   end
+
+  def sign_in(conn, %{"email" => email, "password" => password}) do
+    with {:ok, user} <- Auth.authenticate_user(%{email: email, password: password}),
+         {:ok, token, _claims} <- Chatnix.Guardian.encode_and_sign(user) do
+      render(conn, :sign_in, access_token: token)
+    else
+      _ ->
+        conn
+        |> put_status(:unauthorized)
+        |> render(:sign_in, error: %{message: "Unauthorized"})
+    end
+  end
 end

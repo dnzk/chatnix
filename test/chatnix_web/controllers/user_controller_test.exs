@@ -32,4 +32,38 @@ defmodule ChatnixWeb.UserControllerTest do
                })
     end
   end
+
+  describe "sign_in" do
+    test "returns 200 and access_token when valid", %{conn: conn} do
+      assert %{status: 200, resp_body: response} =
+               post(conn, ~p"/api/sign_in", %{
+                 "email" => "user_1@example.com",
+                 "password" => "asdfasdfasdf"
+               })
+
+      assert {:ok, %{"data" => %{"access_token" => _acess_token}}} = Jason.decode(response)
+    end
+
+    test "access_token has correct claims", %{conn: conn} do
+      assert %{status: 200, resp_body: response} =
+               post(conn, ~p"/api/sign_in", %{
+                 "email" => "user_1@example.com",
+                 "password" => "asdfasdfasdf"
+               })
+
+      {:ok, %{"data" => %{"access_token" => acess_token}}} = Jason.decode(response)
+      assert {:ok, %{"sub" => user_id}} = Chatnix.Guardian.decode_and_verify(acess_token)
+
+      user = Chatnix.Auth.get_user(%{id: user_id})
+      assert user.email == "user_1@example.com"
+    end
+
+    test "returns 401 for invalid params", %{conn: conn} do
+      assert %{status: 401} =
+               post(conn, ~p"/api/sign_in", %{
+                 "email" => "userabcabc@example.com",
+                 "password" => "asdfasdfasdf"
+               })
+    end
+  end
 end
