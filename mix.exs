@@ -45,9 +45,7 @@ defmodule Chatnix.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:pbkdf2_elixir, "~> 2.1.0"},
       {:credo, "~> 1.7.0"},
-      {:guardian, "~> 2.3.1"},
-      {:absinthe, "~> 1.7.1"},
-      {:absinthe_plug, "~> 1.5.8"}
+      {:guardian, "~> 2.3.1"}
     ]
   end
 
