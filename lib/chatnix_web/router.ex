@@ -7,6 +7,7 @@ defmodule ChatnixWeb.Router do
 
   scope "/api", ChatnixWeb do
     pipe_through :api
+    post "/sign_up", UserController, :sign_up
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
