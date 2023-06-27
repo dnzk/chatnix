@@ -2,6 +2,8 @@ import Config
 
 config :pbkdf2_elixir, rounds: 1
 
+config :cors_plug, origin: ["http://localhost:3000"], max_age: 86400, methods: ["GET", "POST"]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

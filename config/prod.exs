@@ -3,6 +3,7 @@ import Config
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
 # when generating URLs.
+config :cors_plug, origin: ["http://localhost:3000"], max_age: 86400, methods: ["GET", "POST"]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Chatnix.Finch
