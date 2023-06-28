@@ -12,6 +12,8 @@ config :chatnix, Chatnix.Guardian,
   secret_key: "664c9OeJYvhEVO4zd7jUUHoH3i/eEMuXfY9Zau7fNIJBlRNsFNmf5/O5T9hrBylm",
   ttl: {1, :day}
 
+config :chatnix, env: Mix.env()
+
 config :chatnix,
   ecto_repos: [Chatnix.Repo]
 

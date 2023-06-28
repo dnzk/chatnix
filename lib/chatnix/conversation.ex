@@ -18,9 +18,9 @@ defmodule Chatnix.Conversation do
   """
   @spec create_room(
           %{
-            required(:name) => String.t(),
+            :name => String.t() | <<>>,
             required(:participants) => list(%{id: User.id()}),
-            required(:admin) => %{id: User.id()}
+            :admin => %{id: User.id()} | nil
           },
           is_dm_room: boolean(),
           is_private: boolean()
