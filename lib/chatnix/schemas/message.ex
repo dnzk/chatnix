@@ -6,7 +6,7 @@ defmodule Chatnix.Schemas.Message do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Chatnix.Schemas.UsersRooms
+  alias Chatnix.Schemas.{UsersRooms, User}
 
   @type t :: %Message{}
 
@@ -16,6 +16,7 @@ defmodule Chatnix.Schemas.Message do
     field :content, :string
     field :sent_by, :id, virtual: true
     field :sent_datetime, :utc_datetime, virtual: true
+    field :user, :map, virtual: true
 
     belongs_to :users_rooms, UsersRooms
 
@@ -37,16 +38,32 @@ defmodule Chatnix.Schemas.Message do
   end
 
   def get_by_room(query \\ Message, room_id, limit \\ 20) do
-    from m in query,
-      join: ur in UsersRooms,
-      on: m.users_rooms_id == ur.id,
-      where: ur.room_id == ^room_id,
-      limit: ^limit,
+    room_message =
+      from m in query,
+        join: ur in UsersRooms,
+        as: :users_rooms,
+        on: m.users_rooms_id == ur.id,
+        where: ur.room_id == ^room_id,
+        limit: ^limit,
+        order_by: [desc: :inserted_at],
+        select: %{
+          content: m.content,
+          sent_datetime: m.inserted_at,
+          sent_by: ur.user_id,
+          id: m.id
+        }
+
+    from q in subquery(room_message),
+      join: u in User,
+      on: q.sent_by == u.id,
       select: %{
-        content: m.content,
-        sent_datetime: m.inserted_at,
-        sent_by: ur.user_id,
-        id: m.id
+        id: q.id,
+        content: q.content,
+        sent_datetime: q.sent_datetime,
+        sent_by: %{
+          id: u.id,
+          username: u.username
+        }
       }
   end
 end
