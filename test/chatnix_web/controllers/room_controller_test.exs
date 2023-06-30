@@ -9,7 +9,7 @@ defmodule ChatnixWeb.RoomControllerTest do
       assert %{status: 401} = get(conn, ~p"/api/users")
     end
 
-    test "returns users for authenciated request", %{conn: conn} do
+    test "returns users for authenticated request", %{conn: conn} do
       %{resp_body: response} =
         post(conn, ~p"/api/sign_in", %{
           "email" => "user_1@example.com",
