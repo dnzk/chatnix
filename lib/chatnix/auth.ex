@@ -57,6 +57,7 @@ defmodule Chatnix.Auth do
 
     - email: User's email
     - id: User's id
+    - username: User's username
   """
   @spec get_user(%{
           :email => String.t()
@@ -70,5 +71,20 @@ defmodule Chatnix.Auth do
         }) :: User.t() | nil
   def get_user(%{id: id}) do
     Repo.get(User, id)
+  end
+
+  @spec get_user(%{
+          :username => String.t()
+        }) :: User.t() | nil
+  def get_user(%{username: username}) do
+    Repo.get_by(User, username: username)
+  end
+
+  @doc """
+  Get all users.
+  """
+  @spec get_users :: list(User.t())
+  def get_users() do
+    Repo.all(User)
   end
 end

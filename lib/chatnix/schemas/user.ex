@@ -11,6 +11,8 @@ defmodule Chatnix.Schemas.User do
   @type t :: %User{}
   @type id :: String.t() | integer()
 
+  @derive {Jason.Encoder, only: [:id, :username, :email]}
+
   schema "users" do
     field :username, :string
     field :email, :string

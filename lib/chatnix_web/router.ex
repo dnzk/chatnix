@@ -9,6 +9,9 @@ defmodule ChatnixWeb.Router do
     pipe_through :api
     post "/sign_up", UserController, :sign_up
     post "/sign_in", UserController, :sign_in
+
+    get "/users", RoomController, :get_users
+    post "/init_conversation", RoomController, :init_conversation
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
