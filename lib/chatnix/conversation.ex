@@ -7,7 +7,36 @@ defmodule Chatnix.Conversation do
   alias Chatnix.Repo
 
   @doc """
+  Initialize room.
+
+  ## Parameters
+
+    - first: Map with id key for the first user's id
+    - second: Map with id key for the second user's id
+  """
+  @spec init_room(%{
+          :first => %{:id => User.id()},
+          :second => %{:id => User.id()}
+        }) :: {:error, any} | {:ok, Chatnix.Schemas.Room.t()}
+  def init_room(%{first: %{id: first_id}, second: %{id: second_id}}) when first_id === second_id,
+    do: {:error, "Cannot initialize room with the same user"}
+
+  def init_room(%{first: %{id: first_id}, second: %{id: second_id}}) do
+    case attempt_init_room([%{id: first_id}, %{id: second_id}]) do
+      {:error, %Room{} = room} ->
+        {:ok, append_messages(room)}
+
+      {:ok, room} ->
+        {:ok, append_messages(room)}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
   Creates chat room.
+  Returns room if successful. If room already exists it returns {:error, room}
 
   ## Parameters
 
@@ -37,13 +66,16 @@ defmodule Chatnix.Conversation do
       true ->
         Repo.transaction(fn ->
           with 2 <- length(participants),
-               false <- dm_room_exists?(participants),
+               :room_does_not_exist <- dm_room_exists?(participants),
                users <- get_users(participants),
                {:ok, room} <-
                  insert_room(generate_dm_room_name(users), true, true),
                {:ok, updated_room} <- associate_room_with_users(room, users) do
             updated_room
           else
+            {:room_exists, room} ->
+              Repo.rollback(room)
+
             {:error, error} ->
               Repo.rollback(error)
 
@@ -361,6 +393,21 @@ defmodule Chatnix.Conversation do
     end
   end
 
+  defp attempt_init_room(participants) do
+    create_room(
+      %{
+        name: "",
+        admin: nil,
+        participants: participants
+      },
+      is_dm_room: true
+    )
+  end
+
+  defp append_messages(%Room{} = room) do
+    %Room{room | messages: Repo.all(Message.get_by_room(room.id))}
+  end
+
   defp get_user(id) do
     case Chatnix.Auth.get_user(%{id: id}) do
       nil -> {:error, "User not found"}
@@ -377,11 +424,19 @@ defmodule Chatnix.Conversation do
   end
 
   defp dm_room_exists?(participants) do
-    participants
-    |> Enum.map(& &1.id)
-    |> Room.query_dm_room()
-    |> Repo.one()
-    |> Kernel.==(length(participants))
+    room =
+      participants
+      |> Enum.map(& &1.id)
+      |> Room.query_dm_room()
+      |> Repo.one()
+
+    case room do
+      %Room{} = r ->
+        {:room_exists, r}
+
+      _ ->
+        :room_does_not_exist
+    end
   end
 
   defp attempt_read_messages(%Room{is_private: false, id: room_id}) do

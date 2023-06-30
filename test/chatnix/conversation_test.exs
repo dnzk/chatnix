@@ -548,4 +548,40 @@ defmodule Chatnix.ConversationTest do
       assert length(rooms) === 4
     end
   end
+
+  describe "&init_conversation/1" do
+    test "success: initializing existing room returns the room" do
+      assert {:ok, %Room{}} =
+               Conversation.init_room(%{
+                 first: %{id: 1},
+                 second: %{id: 3}
+               })
+    end
+
+    test "success: initializaing non existing room creates and returns the room" do
+      {:ok, user_4} =
+        Auth.create_user(%{
+          email: "user_yu@example.com",
+          username: "user_yu",
+          password: "asdfasdfasdf"
+        })
+
+      assert {:ok, %Room{}} =
+               Conversation.init_room(%{
+                 first: user_4,
+                 second: %{id: 1}
+               })
+    end
+
+    test "success: adds messages to the room" do
+      {:ok, %Room{messages: messages}} =
+        Conversation.init_room(%{first: %{id: 1}, second: %{id: 3}})
+
+      assert length(messages) !== 0
+    end
+
+    test "error: initializing with the same users id" do
+      {:error, _} = Conversation.init_room(%{first: %{id: 1}, second: %{id: 1}})
+    end
+  end
 end

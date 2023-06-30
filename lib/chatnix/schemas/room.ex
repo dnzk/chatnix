@@ -10,6 +10,8 @@ defmodule Chatnix.Schemas.Room do
   alias Chatnix.Schemas.User
   import Ecto.Query
 
+  @derive {Jason.Encoder, only: [:id, :name, :messages]}
+
   @type t :: %Room{}
 
   schema "rooms" do
@@ -18,6 +20,7 @@ defmodule Chatnix.Schemas.Room do
     field :is_dm_room, :boolean
 
     many_to_many :users, User, join_through: "users_rooms"
+    field :messages, {:array, :map}, virtual: true
 
     timestamps()
   end
@@ -32,12 +35,17 @@ defmodule Chatnix.Schemas.Room do
     |> unique_constraint(:name)
   end
 
-  def query_dm_room(user_ids) do
+  def query_dm_room([user_1_id | [user_2_id | _]]) do
+    from r1 in subquery(get_room_by_user(user_1_id)),
+      join: r2 in subquery(get_room_by_user(user_2_id)),
+      on: r1.id == r2.id,
+      where: r1.is_dm_room
+  end
+
+  def get_room_by_user(user_id) do
     from r in Room,
       join: ur in UsersRooms,
       on: ur.room_id == r.id,
-      where: ur.user_id in ^user_ids,
-      where: r.is_dm_room,
-      select: count()
+      where: ur.user_id == ^user_id
   end
 end

@@ -34,7 +34,7 @@ defmodule Chatnix.Seeder.DevSeeder do
         participants: [user_2, user_3]
       })
 
-    {:ok, _room_1} =
+    {:ok, room_1} =
       Conversation.create_room(
         %{
           name: "",
@@ -44,7 +44,27 @@ defmodule Chatnix.Seeder.DevSeeder do
         is_dm_room: true
       )
 
+    {:ok, room_2} =
+      Conversation.create_room(
+        %{
+          name: "",
+          admin: nil,
+          participants: [user_2, user_3]
+        },
+        is_dm_room: true
+      )
+
     Conversation.create_message(%{room_id: room.id, sender_id: user_1.id, message: "Hello"})
+
+    Conversation.create_message(%{room_id: room_1.id, sender_id: user_1.id, message: "Hey user_3"})
+
+    Conversation.create_message(%{room_id: room_1.id, sender_id: user_3.id, message: "Hey user_1"})
+
+    Conversation.create_message(%{
+      room_id: room_2.id,
+      sender_id: user_2.id,
+      message: "Hey from user_2"
+    })
 
     :ok
   end
