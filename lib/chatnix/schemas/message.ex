@@ -45,7 +45,7 @@ defmodule Chatnix.Schemas.Message do
         on: m.users_rooms_id == ur.id,
         where: ur.room_id == ^room_id,
         limit: ^limit,
-        order_by: [desc: :inserted_at],
+        order_by: [asc: :inserted_at],
         select: %{
           content: m.content,
           sent_datetime: m.inserted_at,

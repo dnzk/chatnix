@@ -21,4 +21,13 @@ defmodule Chatnix.Guardian do
   def resource_from_claims(_) do
     {:error, "Invalid token"}
   end
+
+  def authenticate_token(token) do
+    with {:ok, claims} <- decode_and_verify(token),
+         {:ok, user} <- resource_from_claims(claims) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
 end
