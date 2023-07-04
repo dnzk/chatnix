@@ -13,6 +13,7 @@ defmodule Chatnix.Schemas.Room do
   @derive {Jason.Encoder, only: [:id, :name, :messages]}
 
   @type t :: %Room{}
+  @type id :: String.t() | integer()
 
   schema "rooms" do
     field :name, :string

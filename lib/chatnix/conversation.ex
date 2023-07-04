@@ -13,7 +13,21 @@ defmodule Chatnix.Conversation do
 
     - first: Map with id key for the first user's id
     - second: Map with id key for the second user's id
+    - room_id: Map with id key for the room's id
   """
+  @spec init_room(%{
+          :room_id => %{:id => Room.id()}
+        }) :: {:error, any} | {:ok, Room.t()}
+  def init_room(%{room_id: room_id}) do
+    case get_room(room_id) do
+      {:ok, room} ->
+        {:ok, append_messages(room)}
+
+      _ ->
+        {:error, "Room does not exist"}
+    end
+  end
+
   @spec init_room(%{
           :first => %{:id => User.id()},
           :second => %{:id => User.id()}

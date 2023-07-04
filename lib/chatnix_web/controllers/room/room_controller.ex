@@ -16,6 +16,18 @@ defmodule ChatnixWeb.RoomController do
     |> render(:get_users, error: %{message: "Unauthorized"})
   end
 
+  def init_conversation(%{assigns: %{current_user: _}} = conn, %{"room_id" => room_id}) do
+    case Conversation.init_room(%{room_id: room_id}) do
+      {:ok, r} ->
+        render(conn, :init_conversation, room: r)
+
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(:init_conversation, error: %{message: "Error"})
+    end
+  end
+
   def init_conversation(%{assigns: %{current_user: current_user}} = conn, %{
         "id" => id
       }) do
@@ -34,6 +46,12 @@ defmodule ChatnixWeb.RoomController do
         |> put_status(:unprocessable_entity)
         |> render(:init_conversation, error: %{message: "Error"})
     end
+  end
+
+  def init_conversation(%{assigns: %{current_user: _}} = conn, _) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> render(:init_conversation, error: %{message: "Error"})
   end
 
   def init_conversation(conn, _) do

@@ -64,6 +64,20 @@ defmodule ChatnixWeb.RoomControllerTest do
 
       assert %{status: 200, resp_body: _response} = r
     end
+
+    test "returns room with status 200 for room_id params", %{
+      conn: conn,
+      access_token: access_token
+    } do
+      r =
+        conn
+        |> put_req_header("authorization", "Bearer #{access_token}")
+        |> post(~p"/api/init_conversation", %{
+          "room_id" => 1
+        })
+
+      assert %{status: 200, resp_body: _response} = r
+    end
   end
 
   describe "create_new_room" do
