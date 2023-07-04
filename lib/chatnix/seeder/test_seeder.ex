@@ -44,6 +44,13 @@ defmodule Chatnix.Seeder.TestSeeder do
         is_dm_room: true
       )
 
+    {:ok, _room_2} =
+      Conversation.create_room(%{
+        name: "Room 2&3",
+        admin: user_2,
+        participants: [user_3]
+      })
+
     Conversation.create_message(%{room_id: room.id, sender_id: user_1.id, message: "Hello"})
 
     Conversation.create_message(%{room_id: room_1.id, sender_id: user_1.id, message: "Hi there"})

@@ -148,6 +148,18 @@ defmodule Chatnix.Conversation do
   end
 
   @doc """
+  Get rooms the user id is part of.
+
+  ### Parameters
+
+    - user_id: The user id to search the room with.
+  """
+  @spec get_rooms_for_user(User.id()) :: {:ok, [Room.t()]}
+  def get_rooms_for_user(user_id) do
+    {:ok, user_id |> Room.get_group_room_by_user() |> Repo.all()}
+  end
+
+  @doc """
   Adds users to room.
 
   ## Parameters

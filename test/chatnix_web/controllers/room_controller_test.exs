@@ -29,6 +29,32 @@ defmodule ChatnixWeb.RoomControllerTest do
     end
   end
 
+  describe "get_rooms" do
+    test "returns error for unauthenticated request", %{conn: conn} do
+      assert %{status: 401} = get(conn, ~p"/api/rooms")
+    end
+
+    test "only returns rooms that current user is part of for authenticated request", %{
+      conn: conn,
+      access_token: access_token,
+      current_user: current_user
+    } do
+      r =
+        conn
+        |> put_req_header("authorization", "Bearer #{access_token}")
+        |> get(~p"/api/rooms")
+
+      assert %{status: 200, resp_body: response} = r
+      {:ok, %{"data" => %{"rooms" => rooms}}} = Jason.decode(response)
+
+      for room <- rooms,
+          do:
+            assert(
+              !is_nil(Repo.get_by(UsersRooms, user_id: current_user.id, room_id: room["id"]))
+            )
+    end
+  end
+
   describe "init_room" do
     test "returns error for unauthenticated request", %{conn: conn} do
       assert %{status: 401} =

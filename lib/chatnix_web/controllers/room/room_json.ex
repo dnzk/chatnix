@@ -7,6 +7,14 @@ defmodule ChatnixWeb.RoomJSON do
     %{data: %{error: error}}
   end
 
+  def get_rooms(%{rooms: rooms}) do
+    %{data: %{rooms: rooms}}
+  end
+
+  def get_rooms(%{error: error}) do
+    %{data: %{error: error}}
+  end
+
   def init_conversation(%{room: room}) do
     %{data: %{room: room}}
   end

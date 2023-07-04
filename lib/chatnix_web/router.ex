@@ -11,6 +11,7 @@ defmodule ChatnixWeb.Router do
     post "/sign_in", UserController, :sign_in
 
     get "/users", RoomController, :get_users
+    get "/rooms", RoomController, :get_rooms
     post "/init_conversation", RoomController, :init_conversation
     post "/create_new_room", RoomController, :create_new_room
   end

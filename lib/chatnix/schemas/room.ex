@@ -49,4 +49,12 @@ defmodule Chatnix.Schemas.Room do
       on: ur.room_id == r.id,
       where: ur.user_id == ^user_id
   end
+
+  def get_group_room_by_user(user_id) do
+    from r in Room,
+      join: ur in UsersRooms,
+      on: ur.room_id == r.id,
+      where: ur.user_id == ^user_id,
+      where: not r.is_dm_room
+  end
 end

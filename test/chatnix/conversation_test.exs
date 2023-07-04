@@ -309,7 +309,7 @@ defmodule Chatnix.ConversationTest do
       q = from(ur in UsersRooms, where: ur.user_id in [1, 2, 3])
       user_room_connections = Repo.all(q)
 
-      assert length(user_room_connections) === 5
+      assert length(user_room_connections) === 7
 
       assert {:ok, _updated} =
                Conversation.add_users_to_room(%{
@@ -320,7 +320,7 @@ defmodule Chatnix.ConversationTest do
 
       user_room_connections = Repo.all(q)
 
-      assert length(user_room_connections) === 5
+      assert length(user_room_connections) === 7
     end
 
     test "adds users to room with valid params" do
@@ -545,7 +545,16 @@ defmodule Chatnix.ConversationTest do
       )
 
       assert {:ok, rooms} = Conversation.get_all_rooms()
-      assert length(rooms) === 4
+      assert length(rooms) === 5
+    end
+  end
+
+  describe "&get_rooms_for_user/1" do
+    test "returns list of all rooms the user id is part of" do
+      assert {:ok, rooms} = Conversation.get_rooms_for_user(1)
+
+      for room <- rooms,
+          do: assert(!is_nil(Repo.get_by(UsersRooms, user_id: 1, room_id: room.id)))
     end
   end
 

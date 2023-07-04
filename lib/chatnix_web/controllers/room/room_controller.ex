@@ -16,6 +16,17 @@ defmodule ChatnixWeb.RoomController do
     |> render(:get_users, error: %{message: "Unauthorized"})
   end
 
+  def get_rooms(%{assigns: %{current_user: %User{id: id}}} = conn, _) do
+    {:ok, rooms} = Conversation.get_rooms_for_user(id)
+    render(conn, :get_rooms, rooms: rooms)
+  end
+
+  def get_rooms(conn, _) do
+    conn
+    |> put_status(:unauthorized)
+    |> render(:get_users, error: %{message: "Unauthorized"})
+  end
+
   def init_conversation(%{assigns: %{current_user: _}} = conn, %{"room_id" => room_id}) do
     case Conversation.init_room(%{room_id: room_id}) do
       {:ok, r} ->
