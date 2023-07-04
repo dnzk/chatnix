@@ -41,4 +41,49 @@ defmodule ChatnixWeb.RoomController do
     |> put_status(:unauthorized)
     |> render(:init_conversation, error: %{message: "Unauthorized"})
   end
+
+  def create_new_room(%{assigns: %{current_user: %{id: admin_id}}} = conn, %{
+        "name" => room_name,
+        "participants" => participants,
+        "is_private" => is_private
+      }) do
+    case Conversation.create_room(
+           %{
+             name: room_name,
+             admin: %{id: admin_id},
+             participants: atomize_participants(participants)
+           },
+           is_private: is_private
+         ) do
+      {:ok, room} ->
+        render(conn, :create_new_room, room: room)
+
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(:create_new_room, error: %{message: "Error"})
+    end
+  end
+
+  def create_new_room(%{assigns: %{current_user: %{id: _}}} = conn, _) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> render(:create_new_room, error: %{message: "Error"})
+  end
+
+  def create_new_room(conn, _) do
+    conn
+    |> put_status(:unauthorized)
+    |> render(:create_new_room, error: %{message: "Unauthorized"})
+  end
+
+  defp atomize_participants([%{"id" => id} | participants]) do
+    atomize_participants(participants, [%{id: id}])
+  end
+
+  defp atomize_participants([%{"id" => id} | participants], result) do
+    atomize_participants(participants, result ++ [%{id: id}])
+  end
+
+  defp atomize_participants([], result), do: result
 end

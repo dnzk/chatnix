@@ -14,4 +14,12 @@ defmodule ChatnixWeb.RoomJSON do
   def init_conversation(%{error: error}) do
     %{data: %{error: error}}
   end
+
+  def create_new_room(%{room: room}) do
+    %{data: %{room: room}}
+  end
+
+  def create_new_room(%{error: error}) do
+    %{data: %{error: error}}
+  end
 end

@@ -12,6 +12,7 @@ defmodule ChatnixWeb.Router do
 
     get "/users", RoomController, :get_users
     post "/init_conversation", RoomController, :init_conversation
+    post "/create_new_room", RoomController, :create_new_room
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
