@@ -7,9 +7,6 @@ defmodule ChatnixWeb.RoomChannel do
   alias Chatnix.Schemas.User
   alias Phoenix.Socket
 
-  def join("notifications", _params, %{assigns: %{current_user: %User{}}} = socket) do
-  end
-
   def join(
         "room:" <> room_id,
         _params,
