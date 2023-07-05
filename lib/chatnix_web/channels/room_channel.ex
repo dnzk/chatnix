@@ -7,6 +7,9 @@ defmodule ChatnixWeb.RoomChannel do
   alias Chatnix.Schemas.User
   alias Phoenix.Socket
 
+  def join("notifications", _params, %{assigns: %{current_user: %User{}}} = socket) do
+  end
+
   def join(
         "room:" <> room_id,
         _params,
@@ -40,11 +43,7 @@ defmodule ChatnixWeb.RoomChannel do
              room_id: room_id
            }),
          :ok <-
-           broadcast(socket, "new_message", %{
-             created_message
-             | sent_by: current_user,
-               sent_datetime: DateTime.now!("Etc/UTC")
-           }) do
+           broadcast(socket, "new_message", %{created_message | sent_by: current_user}) do
       {:reply, :ok, socket}
     else
       _ -> {:reply, :error, socket}

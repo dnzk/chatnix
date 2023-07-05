@@ -5,7 +5,7 @@ defmodule Chatnix.ConversationTest do
   use Chatnix.DataCase, async: true
   alias Chatnix.Conversation
   alias Chatnix.Repo
-  alias Chatnix.Schemas.{Room, Message, RoomAccess, UsersRooms}
+  alias Chatnix.Schemas.{Room, Message, RoomAccess, UsersRooms, User}
   alias Chatnix.TestHelpers.EctoChangeset
   alias Chatnix.Auth
   doctest Chatnix.Conversation
@@ -558,7 +558,7 @@ defmodule Chatnix.ConversationTest do
     end
   end
 
-  describe "&init_conversation/1" do
+  describe "&init_room/1" do
     test "success: initializing existing room returns the room" do
       assert {:ok, %Room{}} =
                Conversation.init_room(%{
@@ -567,7 +567,7 @@ defmodule Chatnix.ConversationTest do
                })
     end
 
-    test "success: initializaing non existing room creates and returns the room" do
+    test "success: initializing non existing room creates and returns the room" do
       {:ok, user_4} =
         Auth.create_user(%{
           email: "user_yu@example.com",
@@ -587,6 +587,13 @@ defmodule Chatnix.ConversationTest do
         Conversation.init_room(%{first: %{id: 1}, second: %{id: 3}})
 
       assert length(messages) !== 0
+    end
+
+    test "success: initializing a DM room returns the second user's name as room name" do
+      user_2 = Repo.get(User, 2)
+      {:ok, %Room{name: name}} = Conversation.init_room(%{first: %{id: 1}, second: %{id: 2}})
+
+      assert name === user_2.username
     end
 
     test "error: initializing with the same users id" do

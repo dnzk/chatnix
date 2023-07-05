@@ -36,15 +36,12 @@ defmodule Chatnix.Conversation do
     do: {:error, "Cannot initialize room with the same user"}
 
   def init_room(%{first: %{id: first_id}, second: %{id: second_id}}) do
-    case attempt_init_room([%{id: first_id}, %{id: second_id}]) do
-      {:error, %Room{} = room} ->
-        {:ok, append_messages(room)}
-
-      {:ok, room} ->
-        {:ok, append_messages(room)}
-
-      error ->
-        error
+    with {:ok, second_user} <- get_user(second_id),
+         {:ok, room} <- attempt_init_room([%{id: first_id}, %{id: second_id}]) do
+      room = %{room | name: second_user.username}
+      {:ok, append_messages(room)}
+    else
+      error -> error
     end
   end
 
@@ -420,14 +417,18 @@ defmodule Chatnix.Conversation do
   end
 
   defp attempt_init_room(participants) do
-    create_room(
-      %{
-        name: "",
-        admin: nil,
-        participants: participants
-      },
-      is_dm_room: true
-    )
+    case create_room(
+           %{
+             name: "",
+             admin: nil,
+             participants: participants
+           },
+           is_dm_room: true
+         ) do
+      {:ok, room} -> {:ok, room}
+      {:error, %Room{} = room} -> {:ok, room}
+      error -> error
+    end
   end
 
   defp append_messages(%Room{} = room) do
