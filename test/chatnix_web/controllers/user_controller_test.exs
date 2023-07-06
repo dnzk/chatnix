@@ -52,10 +52,13 @@ defmodule ChatnixWeb.UserControllerTest do
                })
 
       {:ok, %{"data" => %{"access_token" => acess_token}}} = Jason.decode(response)
-      assert {:ok, %{"sub" => user_id}} = Chatnix.Guardian.decode_and_verify(acess_token)
+
+      assert {:ok, %{"sub" => user_id, "username" => username, "email" => email}} =
+               Chatnix.Guardian.decode_and_verify(acess_token)
 
       user = Chatnix.Auth.get_user(%{id: user_id})
-      assert user.email == "user_1@example.com"
+      assert username == user.username
+      assert email == user.email
     end
 
     test "returns 401 for invalid params", %{conn: conn} do

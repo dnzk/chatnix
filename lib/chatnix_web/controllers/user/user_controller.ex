@@ -23,7 +23,8 @@ defmodule ChatnixWeb.UserController do
 
   def sign_in(conn, %{"email" => email, "password" => password}) do
     with {:ok, user} <- Auth.authenticate_user(%{email: email, password: password}),
-         {:ok, token, _claims} <- Chatnix.Guardian.encode_and_sign(user) do
+         {:ok, token, _claims} <-
+           Chatnix.Guardian.encode_and_sign(user, %{username: user.username, email: user.email}) do
       render(conn, :sign_in, access_token: token)
     else
       _ ->
