@@ -39,15 +39,15 @@ defmodule Chatnix.Schemas.Room do
   def query_dm_room([user_1_id | [user_2_id | _]]) do
     from r1 in subquery(get_room_by_user(user_1_id)),
       join: r2 in subquery(get_room_by_user(user_2_id)),
-      on: r1.id == r2.id,
-      where: r1.is_dm_room
+      on: r1.id == r2.id
   end
 
   def get_room_by_user(user_id) do
     from r in Room,
       join: ur in UsersRooms,
       on: ur.room_id == r.id,
-      where: ur.user_id == ^user_id
+      where: ur.user_id == ^user_id,
+      where: r.is_dm_room
   end
 
   def get_group_room_by_user(user_id) do
